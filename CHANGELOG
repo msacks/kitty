@@ -1,3 +1,5 @@
+Matthew Sacks 6/15/2010: Created project and first few versions, lost track
+Matthew Sacks 7/27/2010: Started tracking changes
 Peary Chiu (pearychiu@gmail.com) 7/28/2010: Added support for 
 Matthew Sacks (matthew@sandsla.com) 7/29/2010: Renamed project to tcKitty and created new repo
-
+Peary Chiu 8/16/2010 :  Added set and invoke, Set attributeName value, Invoke operationName param
