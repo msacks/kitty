@@ -21,6 +21,9 @@ class ObjectNameNotFoundError : pass
 class MBeanNotFoundError : pass 
 class MBeanAttributeNotFoundError : pass 
 class MBeanOperationNotFoundError : pass 
+class SetAttributeError : pass 
+class OperationNotFoundError : pass
+class InvokeError : pass 
 
 class JmxClient :
 
@@ -141,7 +144,7 @@ class JmxClient :
                         params = [] 
                         for p in ops.getSignature() : 
                             params.append(p.getType())
-                        print "O " + ops.getReturnType()  + " " + ops.getName() + " ( "  + ")"
+                        print "O " + ops.getReturnType()  + " " + ops.getName() + " ( "  + ",".join(params) +  ")"
                     
                     pass
                 except :
@@ -197,13 +200,61 @@ class JmxClient :
                 print "isReadable : " + readable 
                 print "isWritable : " + writable 
 
-
     def set(self, att, val) : 
-        print "set" 
+        if JmxClient.remote : 
+            if JmxClient.domain : 
+                objectName = JmxClient.domain + ":"         
+                if len(JmxClient.MBeansPath) : 
+                    objectName = objectName + ','.join(JmxClient.MBeansPath)
+                try : 
+                    mbean = JmxClient.remote.getMBeanInfo(javax.management.ObjectName(objectName))
+                except : 
+                    raise MBeanNotFoundError
+                attr = None 
+                for a in mbean.getAttributes() : 
+                    if a.getName()  == att : 
+                        attr = a 
+                        break
+                if not attr : 
+                    raise MBeanAttributeNotFoundError                     
+                if attr.isWritable() : 
+                    try :
+                        a = javax.management.Attribute(att, val)
+                        JmxClient.remote.setAttribute(javax.management.ObjectName(objectName), a)
+                    except : 
+                        raise SetAttributeError 
+                else :
+                    raise SetAttributeError 
 
-    def invoke(self, rm) : 
-        print "rm" 
 
+
+    def invoke(self, op, params) : 
+        if JmxClient.remote : 
+            if JmxClient.domain : 
+                objectName = JmxClient.domain + ":"         
+                if len(JmxClient.MBeansPath) : 
+                    objectName = objectName + ','.join(JmxClient.MBeansPath)
+                try : 
+                    mbean = JmxClient.remote.getMBeanInfo(javax.management.ObjectName(objectName))
+                except : 
+                    raise MBeanNotFoundError
+                ops = None 
+                for o in mbean.getOperations() :
+                    if o.getName() == op : 
+                        ops = o
+                        break 
+                if not ops :
+                    raise OperationNotFoundError 
+                sig = [] 
+                for s in ops.getSignature() : 
+                    sig.append(p.getType())
+
+                try : 
+                    JmxClient.remote.invoke(javax.management.ObjectName(objectName), op, params, sig)
+                except :
+                    raise InvokeError 
+
+        
     def pwd(self) :    
         name =  ''
         if JmxClient.domain : 
@@ -230,18 +281,15 @@ class JmxCmd(Cmd):
 
 
     def do_connect(self, line):
-        """connect -h|--hostip <hostname or ip_addr> -p|--portnum <port>
-        Establish a connection to the JMX Server. Uses jmxrmi protocol by default"""
-        parser = optparse.OptionParser(conflict_handler="resolve")
-        parser.add_option('-h', '--hostip', dest='host')
-        parser.add_option('-p', '--portnum', dest='port')
-        (options, args) = parser.parse_args(line.split())
-        JmxCmd.jmxClient = JmxClient();
+        JmxCmd.connectArgs = line.split(' ')
+        JmxCmd.jmxClient = JmxClient()        
         try :
-            JmxCmd.jmxClient.connect(options.host, options.port) 
+            if  len(JmxCmd.connectArgs) < 2: 
+                raise ConnectionError 
+            JmxCmd.jmxClient.connect(JmxCmd.connectArgs[0], JmxCmd.connectArgs[1]) 
         except ConnectionError : 
             JmxCmd.jmxClient = None 
-            print "Error: failed to connect to  " + options.host + ": " + options.port  
+            print "Error: failed to connect to  '" + line + "'"  
 
     def do_disconnect(self, line): 
         try : 
@@ -291,6 +339,29 @@ class JmxCmd(Cmd):
                 print "Error: Attribute '" + line + "' not found." 
             except MBeanNotFoundError : 
                 print "Error: MBean '" + JmxCmd.jmxClient.pwd() +  "'1 not found." 
+
+     
+    def do_set(self, line) : 
+        if JmxCmd.jmxClient : 
+            JmxCmd.setArgs = line.split(' ')
+            try :
+                if  len(JmxCmd.setArgs) < 2: 
+                    raise SetAttributeError 
+                JmxCmd.jmxClient.set(JmxCmd.setArgs[0], JmxCmd.setArgs[1]) 
+            except SetAttributeError : 
+                print "Error: failed to set attrbute value." 
+
+
+    
+    def do_invoke(self, line) : 
+        if JmxCmd.jmxClient : 
+            JmxCmd.invokeArgs = line.split(' ')
+            try :
+                
+                JmxCmd.jmxClient.invoke(JmxCmd.invokeArgs[0], JmxCmd.invokeArgs[1:]) 
+            except :
+                print "Error: failed to invoke: " + line 
+
 
     def do_quit(self, arg):
         if JmxCmd.jmxClient : 
