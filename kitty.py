@@ -281,6 +281,8 @@ class JmxCmd(Cmd):
 
 
     def do_connect(self, line):
+	"""connect <hostname or ip_addr> <port>
+                Establish a connection to the JMX Server. Uses jmxrmi protocol by default"""
         JmxCmd.connectArgs = line.split(' ')
         JmxCmd.jmxClient = JmxClient()        
         try :
