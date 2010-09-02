@@ -294,6 +294,7 @@ class JmxCmd(Cmd):
             print "Error: failed to connect to  '" + line + "'"  
 
     def do_disconnect(self, line): 
+	"""Close the JMX Connection"""
         try : 
             if JmxCmd.jmxClient : 
                 JmxCmd.jmxClient.disconnect()
@@ -308,6 +309,7 @@ class JmxCmd(Cmd):
             JmxCmd.jmxClient.domains()
 
     def do_domain(self, arg): 
+	"""Set the current domain to perform operations on"""
         if JmxCmd.jmxClient : 
             try :
                 JmxCmd.jmxClient.setDomain(arg) 
@@ -316,6 +318,7 @@ class JmxCmd(Cmd):
                 print "Error: Domain '" + arg + "' not found. "
 
     def do_cd(self, line) :
+	"""Change the directory of the MBean path"""
         try : 
             if  JmxCmd.jmxClient : 
                 JmxCmd.jmxClient.cd(line)
@@ -323,6 +326,7 @@ class JmxCmd(Cmd):
             print "Invalide path"
         
     def do_ls(self, line) : 
+	"""List the mbeans/values in the current path"""
         try : 
             if JmxCmd.jmxClient : 
                 JmxCmd.jmxClient.ls()
@@ -330,10 +334,12 @@ class JmxCmd(Cmd):
             print "Domain is none" 
 
     def do_pwd(self,line) : 
+	"""print the working directory of the mbean path"""
         if JmxCmd.jmxClient : 
             print JmxCmd.jmxClient.pwd()
             
     def do_get(self, line) : 
+	"""Get the attribute of an mbean"""
         if JmxCmd.jmxClient : 
             try : 
                 JmxCmd.jmxClient.get(line)
@@ -344,6 +350,7 @@ class JmxCmd(Cmd):
 
      
     def do_set(self, line) : 
+	"""Set an attribute of an mbean"""
         if JmxCmd.jmxClient : 
             JmxCmd.setArgs = line.split(' ')
             try :
@@ -356,6 +363,7 @@ class JmxCmd(Cmd):
 
     
     def do_invoke(self, line) : 
+	"""Invoke a remote method"""
         if JmxCmd.jmxClient : 
             JmxCmd.invokeArgs = line.split(' ')
             try :
@@ -366,6 +374,7 @@ class JmxCmd(Cmd):
 
 
     def do_quit(self, arg):
+	"""Exit"""
         if JmxCmd.jmxClient : 
             JmxCmd.jmxClient.disconnect()
         print("bye.")
